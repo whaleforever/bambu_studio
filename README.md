@@ -26,6 +26,10 @@ sudo apt install libwebkit2gtk-4.0-dev
 ./squashfs-root/AppRun
 ```
 
+## Update history
+2025/6/11 add option to choose which version bambu_studio that you want to install
+
+
 ## License
 
 `BambuStudio_128px.png` source:
