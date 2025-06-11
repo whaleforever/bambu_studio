@@ -3,6 +3,17 @@
 # Use of this source code is governed under the Apache License, Version 2.0
 # that can be found in the LICENSE file.
 
+# Modified by Firdan Machda, more details can be seen at git history.
+
+
+# Define color codes
+START='\033'
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BOLD='\033[1m'
+NC='\033[0m' # No Color
+
 set -eu
 
 cd "$(dirname $0)"
@@ -32,22 +43,49 @@ DATA="$(curl -s https://api.github.com/repos/bambulab/BambuStudio/releases/lates
 #echo "$DATA"
 SCRIPT="import json,sys;
 e = [i['browser_download_url'] for i in json.load(sys.stdin)['assets']];
-print([i for i in e if 'ubuntu' in i][0]);"
-URL="$(echo "$DATA" | python3 -c "$SCRIPT")"
-FILE="$(basename $URL)"
+urls = [i for i in e if 'ubuntu' in i];
+for url in urls: print(url);
+"
 
-if [ -f "$FILE" ]; then
-  echo "$FILE is already latest"
+raw_urls=$(echo "$DATA" | python3 -c "$SCRIPT")
+total=0
+urls=()
+
+# Make sure to list all available ubuntu release
+echo -e "${BOLD} Detected Bambu Studio versions: ${NC}"
+for item in $raw_urls; do
+  echo "  $total) $item"
+  total=$((total + 1))
+  urls+=($item)
+done
+
+choice=0
+
+# Let user choose which version to install
+if [ $total -gt 1 ]; then
+  read -p "Choose version to install : (0) " choice
+  else
+  echo "Detected only one version, continuing..."
+fi
+
+url=${urls[$choice]}
+
+file="$(basename $url)"
+
+if [ -f "$file" ]; then
+  echo "$file is already latest"
 else
-  echo "Downloading $URL"
-  curl -sSL "$URL" -o "$FILE"
+  echo "Downloading $url"
+  curl -sSL "$url" -o "$file"
 fi
 
 # Always +x the file just in case.
-chmod +x "$FILE"
+chmod +x "$file"
 
 # Always recreate the symlink just in case.
 if [ -f Bambu_Studio.AppImage ]; then
   rm Bambu_Studio.AppImage
 fi
-ln -s "$FILE" Bambu_Studio.AppImage
+ln -s "$file" Bambu_Studio.AppImage
+
+echo -e "${BOLD}${GREEN} It's done!${NC}"
